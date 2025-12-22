@@ -3,6 +3,7 @@ simulation/social.py
 Manages the global 'Social Fame' ledger, reputation decay, and gossip.
 """
 from config import WORLD_SETTINGS
+import random
 
 class SocialLedger:
     def __init__(self):
@@ -50,10 +51,18 @@ class SocialLedger:
         
         # Apply Transparency Logic:
         # If transparency is 0.5, the 'perceived' fame is shifted toward neutral (0.5)
-        # simulating that the public doesn't know the full truth.
         perceived_fame = 0.5 + (raw_reputation - 0.5) * self.transparency
+
+        # Apply Gossip Reliability (Noise)
+        # 1.0 = No Noise, 0.0 = High Noise
+        reliability = WORLD_SETTINGS.get("gossip_reliability", 1.0)
+        if reliability < 1.0:
+            noise_range = (1.0 - reliability)
+            noise = random.uniform(-noise_range, noise_range)
+            perceived_fame += noise
         
-        return perceived_fame
+        # Clamp to [0, 1]
+        return max(0.0, min(1.0, perceived_fame))
 
     def apply_fame_decay(self):
         """

@@ -1,161 +1,93 @@
-# Prisoner's Dilemma Social Simulation / Tutsak İkilemi Sosyal Simülasyonu
+# PD-Sim: Neuroevolutionary Prisoner's Dilemma
 
-An advanced **Agent-Based Simulation (ABS)** exploring the evolution of cooperation, reputation, and survival strategies in a competitive digital ecosystem. The project models how genetic traits (`DNA`), social memory (`Fame`), and economic pressure (`Taxes`) influence the emergence of altruism or selfishness.
-
-Bir rekabetçi dijital ekosistemde işbirliği, itibar ve hayatta kalma stratejilerinin evrimini inceleyen gelişmiş bir **Ajan Tabanlı Simülasyon (ABS)**. Proje, genetik özelliklerin (`DNA`), sosyal hafızanın (`Şöhret`) ve ekonomik baskının (`Vergiler`) diğerkâmlık veya bencilliğin ortaya çıkışını nasıl etkilediğini modeller.
+An advanced **Agent-Based Simulation (ABS)** exploring the evolution of cooperation, culture, and intelligence in a competitive digital ecosystem. This project models how Neural Networks (`Brain`), inheritable culture (`Ideology`), and economic pressure (`Taxes`) shape the emergence of complex societies.
 
 ---
 
 ## 🇬🇧 English Documentation
 
 ### 1. Project Overview
-This simulation places autonomous agents on a 2D grid where they interact via the **Prisoner's Dilemma** game. Unlike simple models, these agents have "brains" that weigh their internal genetic nature against their private experiences and the public reputation of their neighbors. The goal is to observe whether a society of cooperators can survive against "free riders" (defectors) under various economic conditions.
+This simulation places autonomous agents on a 2D grid where they interact via the **Prisoner's Dilemma** game. Unlike simple rule-based models, these agents possess evolving **Neural Networks** that learn strategies over generations. They reproduce, migrate, form cultures, and eventually die, allowing "Survival of the Fittest" to select for the most successful behavioral traits.
 
 ### 2. Core Mechanics
 
-#### 🧬 The DNA (Genetics)
-Every agent is born with a unique set of immutible traits (DNA) inherited from their parent with slight mutations:
-*   **`trustworthiness` (0.0 - 1.0):** The base probability that the agent will cooperate, before considering external factors.
-*   **`vengefulness` (0.0 - 1.0):** How much the agent prioritizes their *private memory* of someone over that person's *public reputation*. High vengefulness means they never forgive a personal betrayal, even if the person is famous.
-*   **`social_sensitivity` (0.0 - 1.0):** How much the agent cares about reputation. A low score means they ignore what society thinks; a high score means they conform to the social norm (trusting famous people, shunning outcasts).
-*   **`mobility_inclination` (0.0 - 1.0):** The likelihood of moving to a new location if lonely or dissatisfied with neighbors.
-*   **`memory_capacity` (Int):** The number of past interactions the agent can remember per neighbor. Higher memory allows for better judgment but incurs a "Cognitive Tax" (brain upkeep cost).
-*   **`hunger_threshold` (Points):** The point level at which the agent enters "Survival Mode".
+#### 🧠 The Brain (Neuroevolution)
+Every agent decides its actions using a Feed-Forward Neural Network (3-Layer Perceptron):
+*   **Inputs (6):**
+    1.  `MyPoints`: Current wealth (Survival pressure).
+    2.  `MyAge`: Current age (Life expectancy).
+    3.  `OppFame`: The opponent's public reputation.
+    4.  `OppHistory`: Personal memory of this opponent.
+    5.  `Bias`: Constant input.
+    6.  **`Ideology`:** Internal state representing "Willingness to Cooperate" (Trust).
+*   **Outputs (4):** `[Cooperate, Defect, Move, Ignore]`.
+*   **Evolution:** Offspring inherit their parent's weight matrices (`W1`, `W2`) with Gaussian noise mutation (`mutation_power`).
 
-#### 🧠 The Decision Engine
-Agents are not mindless automatons. Every tick, they make a decision (`Cooperate`, `Defect`, `Move`, or `Ignore`) based on a utility function:
-1.  **Survival Override:** If an agent's points drop below their `hunger_threshold`, they enter panic mode. The likelihood of **Defection** (stealing points) increases drastically, disregarding their moral DNA.
-2.  **Trust Evaluation:** The agent calculates a "Trust Score" for their neighbor by blending the neighbor's public **Fame** (Social Ledger) with their own **Private Memory**.
-3.  **Action:**
-    *   **High Trust:** Cooperate.
-    *   **Low Trust:** Defect (Pre-emptive strike).
-    *   **Very Low Trust:** Move away or Ignore (Social Ostracism).
-    *   **Whim:** A flat 5% chance of doing something completely random to simulate irrationality.
+#### 🧬 Genetics & Culture
+Traits are no longer just hardcoded probabilities; they are complex biological and cultural markers:
+*   **Ideology Inheritance:** Children inherit their parent's *current* Ideology (Optimism/Cynicism). This creates "Cultural Momentum"—a high-trust parent raises a high-trust child.
+*   **Evolvable Memory:** `memory_capacity` is a gene (5-50 slots). Smarter agents pay higher taxes. Nature decides if "High IQ" is worth the metabolic cost.
 
-#### ⚖️ The Social Ledger (Reputation)
-*   **Public Fame:** The society maintains a shared ledger of every agent's reputation.
-*   **Gossip:** Actions are recorded but can be "noisy" based on the `gossip_reliability` setting.
-*   **Decay:** Reputation isn't permanent. Fame decays every tick (`fame_decay`), forcing agents to continuously prove their worth to stay "Green" (Good).
-*   **Visualization:** In the UI, **Green** agents are cooperators, **Red** are defectors, and **Yellow** are neutral/unknown.
+#### ⚖️ Social Dynamics
+*   **Ideology (Trust Model):** Agents have a "Mood" (0.0=Cynic, 1.0=Idealist). Cooperation boosts this mood; betrayal destroys it. This acts as a short-term Recurrent Memory.
+*   **Gossip Reliability:** Public fame is noisy. Agents might hear misinformation (`gossip_reliability`), simulating the "Fog of War" in social reputation.
+*   **Migration:** If an area is overcrowded, rich agents can pay a **Migration Tax** (`migration_tax`) to "Launch" their offspring to a distant, empty part of the world.
 
 #### 💰 Economic Physics
-The world is harsh. Agents must maintain a positive point balance to survive.
-*   **Payoff Matrix:**
-    *   **Coop/Coop:** Both gain moderate points (Reward).
-    *   **Defect/Coop:** Defector gains huge points (Temptation), Cooperator loses huge points (Sucker).
-    *   **Defect/Defect:** Both lose small points (Punishment).
+The world is governed by strict thermodynamic laws:
+*   **Payoff Matrix:** High temptation to defect (`15` points) vs moderate reward for cooperation (`4`).
 *   **Taxes:**
-    *   **Existence Tax:** Cost of living per tick.
-    *   **Cognitive Tax:** Cost proportional to `memory_capacity`. Smarter agents need more food.
-    *   **Movement Tax:** Cost to move to a new cell.
+    *   **Existence Tax:** Cost of breathing (`base_existence_tax`).
+    *   **Cognitive Tax:** Cost of being smart (`cognitive_tax_rate` * Memory).
+    *   **Movement Tax:** Cost of running away.
+    *   **Migration Tax:** Cost of colonizing new lands.
 
 ### 3. File Structure
-*   `main.py`: Entry point. Initializes the engine and runs the visualization loop.
-*   `config.py`: Central control room. modify `payoff_matrix`, `tax_rates`, and `DNA_bounds` here.
-*   `analyze.py`: Post-run analysis tool. Plots historical data (Population, Fame, Wealth) from the CSV logs.
+*   `main.py`: Entry point. Runs the visualizer and game loop.
+*   `config.py`: **The Control Room.** Tune taxes, mutation rates, and game physics here.
 *   `simulation/`:
-    *   `agent.py`: Contains the `Agent` class and the decision logic (`decide()`).
-    *   `engine.py`: Manages the game loop, turn processing, and global rules (taxes/death).
-    *   `social.py`: Manages the global `SocialLedger`.
-    *   `world.py`: Manages the 2D grid geometry.
+    *   `agent.py`: The Neural Network and genetic logic.
+    *   `engine.py`: The Physics Engine (Movement, Death, Reproduction).
+    *   `social.py`: The Reputation System.
+*   `verify_fix.py`: Headless script for fast statistical verification.
 
-### 4. Installation & Usage
+### 4. How to Run
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-**Prerequisites:** Python 3.x
-**Dependencies:** `numpy`, `matplotlib`, `pandas`
+# Run Visualization (The Movie)
+python3 main.py
 
-1.  **Install Libraries:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-2.  **Run Simulation:**
-    ```bash
-    python3 main.py
-    ```
-    *The visualizer window will open. Watch the evolution in real-time.*
-
-3.  **Analyze Results:**
-    After the simulation finishes (or is interrupted), run:
-    ```bash
-    python3 analyze.py
-    ```
-    *This generates graphs showing population stability and behavioral trends.*
+# Run Statistical Analysis (The Data)
+python3 verify_fix.py
+```
 
 ---
 
 ## 🇹🇷 Türkçe Dokümantasyon
 
 ### 1. Proje Özeti
-Bu simülasyon, "Tutsak İkilemi" (Prisoner's Dilemma) oyunu üzerinden etkileşime giren otonom ajanları 2 boyutlu bir ızgaraya yerleştirir. Basit modellerin aksine, bu ajanların içsel genetik yapılarını ("Gen"), özel deneyimlerini ve komşularının kamuya açık itibarlarını tartan "beyinleri" vardır. Amaç, çeşitli ekonomik koşullar altında işbirlikçi bir toplumun "beleşçilere" (ihanet edenlere) karşı hayatta kalıp kalamayacağını gözlemlemektir.
+Bu simülasyon, "Tutsak İkilemi" oyunu üzerinden etkileşime giren ajanları modeller. Basit kurallar yerine, ajanlar nesiller boyu öğrenen **Sinir Ağlarına (Yapay Zeka)** sahiptir. Ürerler, göç ederler, kültür oluştururlar ve ölürler; böylece "Doğal Seçilim" en başarılı davranışları belirler.
 
 ### 2. Temel Mekanikler
 
-#### 🧬 DNA (Genetik)
-Her ajan, ebeveyninden hafif mutasyonlarla miras aldığı benzersiz özelliklerle (DNA) doğar:
-*   **`trustworthiness` (Güvenilirlik):** Dış faktörler hesaba katılmadan önce ajanın işbirliği yapma konusundaki temel eğilimi.
-*   **`vengefulness` (İntikamcılık):** Ajanın bir kişi hakkındaki *özel hafızasını*, o kişinin *toplumsal itibarından* ne kadar üstün tuttuğu. Yüksek intikamcılık, kişi "ünlü" olsa bile şahsi ihanetlerin asla affedilmemesi anlamına gelir.
-*   **`social_sensitivity` (Sosyal Duyarlılık):** Ajanın itibarı ne kadar önemsediği. Düşük puan toplumu umursamazlık; yüksek puan toplumsal normlara (ünlülere güvenmek, dışlanmışları yok saymak) uymak demektir.
-*   **`mobility_inclination` (Hareket Eğilimi):** Yalnız kaldıysa veya komşularından memnun değilse yeni bir yere taşınma olasılığı.
-*   **`memory_capacity` (Hafıza Kapasitesi):** Ajanın komşu başına hatırlayabileceği geçmiş etkileşim sayısı. Yüksek hafıza daha iyi karar vermeyi sağlar ancak "Bilişsel Vergi" (beyin bakım maliyeti) doğurur.
-*   **`hunger_threshold` (Açlık Sınırı):** Ajanın "Hayatta Kalma Moduna" girdiği puan seviyesi.
+#### 🧠 Beyin (Nöroevrim)
+Her ajan kararlarını bir Sinir Ağı ile verir:
+*   **Girdiler (6):** Puanım, Yaşım, Rakibin Şöhreti, Özel Hafızam, Bias, **İdeoloji**.
+*   **Çıktılar (4):** `[İşbirliği, İhanet, Kaç, Yoksay]`.
+*   **Evrim:** Çocuklar, ebeveynlerinin beyin ağırlıklarını (`W1`, `W2`) mutasyonla miras alır.
 
-#### 🧠 Karar Motoru
-Ajanlar şuursuz robotlar değildir. Her turda, bir fayda fonksiyonuna (utility function) dayanarak bir karar (`İşbirliği`, `İhanet`, `Taşınma` veya `Yoksayma`) verirler:
-1.  **Hayatta Kalma Baskısı (Override):** Ajanın puanları `hunger_threshold` altına düşerse panik moduna girer. Ahlaki DNA'sı ne olursa olsun, **İhanet** (puan çalma) olasılığı radikal biçimde artar.
-2.  **Güven Değerlendirmesi:** Ajan, komşusunun halka açık **Şöhretini** (Sosyal Defter) kendi **Özel Hafızası** ile harmanlayarak bir "Güven Puanı" hesaplar.
-3.  **Eylem:**
-    *   **Yüksek Güven:** İşbirliği yap.
-    *   **Düşük Güven:** İhanet et (Önleyici saldırı).
-    *   **Çok Düşük Güven:** Taşın veya Yoksay (Sosyal Dışlanma - Ostracism).
-    *   **Keyfekeder (Whim):** İrrasyonelliği simüle etmek için %5 şansla tamamen rastgele bir hamle yap.
-
-#### ⚖️ Sosyal Defter (İtibar Sistemi)
-*   **Kamu Şöhreti:** Toplum, her ajanın itibarı için ortak bir defter tutar.
-*   **Dedikodu:** Eylemler kaydedilir ancak `gossip_reliability` ayarına bağlı olarak "parazitli" (hatalı) olabilir.
-*   **Çürüme:** İtibar kalıcı değildir. Şöhret her turda azalır (`fame_decay`), bu da ajanları "Yeşil" (İyi) kalmak için kendilerini sürekli kanıtlamaya zorlar.
-*   **Görselleştirme:** Arayüzde, **Yeşil** ajanlar işbirlikçi, **Kırmızı** ajanlar hain, **Sarı** ajanlar ise nötr/bilinmeyendir.
+#### 🧬 Genetik ve Kültür
+*   **İdeoloji Mirası:** Çocuklar, ebeveynlerinin *o anki* dünya görüşünü (İyimserlik/Kötümserlik) miras alır. Bu, "Güven Kültürü"nün nesiller boyu aktarılmasını sağlar.
+*   **Evrimleşen Hafıza:** Hafıza kapasitesi (Zeka) bir gendir. Zeki ajanlar daha yüksek "Bilişsel Vergi" öder. Doğa, zekanın maliyetine değip değmeyeceğine karar verir.
 
 #### 💰 Ekonomik Fizik
-Dünya acımasızdır. Ajanlar hayatta kalmak için pozitif bir puan bakiyesini korumalıdır.
-*   **Kazanç Matrisi:**
-    *   **Coop/Coop:** İkisi de orta düzeyde puan kazanır (Ödül).
-    *   **Defect/Coop:** Hain büyük puan kazanır (Ayartma), İşbirlikçi büyük puan kaybeder (Enayi).
-    *   **Defect/Defect:** İkisi de az puan kaybeder (Ceza).
-*   **Vergiler:**
-    *   **Varoluş Vergisi:** Tur başına yaşam maliyeti.
-    *   **Bilişsel Vergi:** `memory_capacity` ile orantılı maliyet. Daha zeki ajanlar daha fazla yiyeceğe ihtiyaç duyar.
-    *   **Hareket Vergisi:** Yeni bir kareye taşınmanın maliyeti.
+*   **Göç (Migration):** Zengin ajanlar, kalabalık bölgelerden kaçmak için **Göç Vergisi** ödeyerek çocuklarını dünyanın uzak köşelerine "Fırlatabilir" (Colonization).
+*   **Bilişsel Vergi:** Zeki olmak pahalıdır (`cognitive_tax_rate`). Aptal ve tasarruflu olmak bazen daha iyi bir stratejidir.
 
-### 3. Dosya Yapısı
-*   `main.py`: Giriş noktası. Motoru başlatır ve görselleştirme döngüsünü çalıştırır.
-*   `config.py`: Merkezi kontrol odası. `payoff_matrix`, `tax_rates` ve `DNA_bounds` ayarlarını buradan değiştirin.
-*   `analyze.py`: Çalıştırma sonrası analiz aracı. CSV kayıtlarından tarihsel verileri (Nüfus, Şöhret, Zenginlik) grafiğe döker.
-*   `simulation/`:
-    *   `agent.py`: `Agent` sınıfını ve karar mantığını (`decide()`) içerir.
-    *   `engine.py`: Oyun döngüsünü, tur işlemlerini ve küresel kuralları (vergiler/ölüm) yönetir.
-    *   `social.py`: Küresel `SocialLedger` yapısını yönetir.
-    *   `world.py`: 2 boyutlu ızgara geometrisini yönetir.
-
-### 4. Kurulum ve Kullanım
-
-**Gereksinimler:** Python 3.x
-**Kütüphaneler:** `numpy`, `matplotlib`, `pandas`
-
-1.  **Kütüphaneleri Yükleyin:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-2.  **Simülasyonu Başlatın:**
-    ```bash
-    python3 main.py
-    ```
-    *Görselleştirme penceresi açılacaktır. Evrimi gerçek zamanlı izleyin.*
-
-3.  **Sonuçları Analiz Edin:**
-    Simülasyon bittikten (veya durdurulduktan) sonra şunu çalıştırın:
-    ```bash
-    python3 analyze.py
-    ```
-    *Bu komut, nüfus istikrarını ve davranışsal eğilimleri gösteren grafikler oluşturur.*
+### 3. Nasıl Çalıştırılır
+```bash
+python3 main.py
+```
+*Görselleştirme penceresi açılır. Evrimi izleyin.*

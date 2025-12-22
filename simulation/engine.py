@@ -19,6 +19,8 @@ class SimulationEngine:
         self.deaths_this_tick = 0
         self.coops_this_tick = 0
         self.defects_this_tick = 0
+        self.moves_this_tick = 0
+        self.ignores_this_tick = 0
         
         self._seed_population()
 
@@ -38,6 +40,8 @@ class SimulationEngine:
         self.deaths_this_tick = 0
         self.coops_this_tick = 0
         self.defects_this_tick = 0
+        self.moves_this_tick = 0
+        self.ignores_this_tick = 0
         
         # 1. Process Actions
         self._process_turn()
@@ -64,7 +68,7 @@ class SimulationEngine:
             neighbors = self.world.get_neighbors(*agent.position)
             if not neighbors:
                 # If lonely, check for independent movement decision
-                if random.random() < agent.dna["mobility_inclination"]:
+                if random.random() < 0.1: # Fixed mobility chance for now
                     self._handle_movement(agent)
                 continue
 
@@ -82,8 +86,17 @@ class SimulationEngine:
             # --- RESOLUTION PHASE ---
             # Handle Avoidance (Ignore or Move)
             if "IGNORE" in [move_a, move_b] or "MOVE" in [move_a, move_b]:
-                if move_a == "MOVE": self._handle_movement(agent)
-                if move_b == "MOVE": self._handle_movement(neighbor)
+                if move_a == "MOVE": 
+                    self._handle_movement(agent)
+                    self.moves_this_tick += 1
+                elif move_a == "IGNORE":
+                    self.ignores_this_tick += 1
+                    
+                if move_b == "MOVE": 
+                    self._handle_movement(neighbor)
+                    self.moves_this_tick += 1
+                elif move_b == "IGNORE":
+                    self.ignores_this_tick += 1
                 continue
 
             # Resolve PD Interaction
@@ -107,6 +120,10 @@ class SimulationEngine:
             neighbor.update_memory(agent.id, move_a)
             self.social_ledger.record_action(agent.id, move_a)
             self.social_ledger.record_action(neighbor.id, move_b)
+            
+            # Learn from interaction (Ideology Update)
+            agent.update_ideology(move_b)
+            neighbor.update_ideology(move_a)
 
             played_this_turn.update([agent.id, neighbor.id])
 
@@ -118,18 +135,24 @@ class SimulationEngine:
 
     def _apply_taxes(self):
         for agent in self.agents:
+            # Aging
+            agent.age += 1
+            
             # Metabolism
             agent.points -= GAME_PHYSICS["base_existence_tax"]
             # Cognitive Tax
-            agent.points -= (agent.dna["memory_capacity"] * GAME_PHYSICS["cognitive_tax_rate"])
+            agent.points -= (agent.memory_capacity * GAME_PHYSICS["cognitive_tax_rate"])
 
     def _manage_lifecycle(self):
         for agent in self.agents[:]:
-            # Death Check
-            if not agent.is_alive():
+            # Death Check (Bankruptcy OR Old Age)
+            if not agent.is_alive() or agent.age > POPULATION_SETTINGS["max_age"]:
                 self.world.grid[agent.position[0], agent.position[1]] = None
-                self.agents.remove(agent)
-                self.deaths_this_tick += 1
+                try:
+                    self.agents.remove(agent)
+                    self.deaths_this_tick += 1
+                except ValueError:
+                    pass # Agent was already removed (e.g., displaced)
                 continue
             
             # Reproduction Check
@@ -138,12 +161,45 @@ class SimulationEngine:
 
     def _reproduce(self, parent):
         target_pos = self.world.find_empty_adjacent(*parent.position)
+        
+        # Displacement Logic (Competitive Reproduction)
+        if not target_pos and POPULATION_SETTINGS.get("birth_protocol") == "displace":
+            neighbors = self.world.get_neighbors(*parent.position)
+            if neighbors:
+                # Find weakest neighbor
+                weakest = min(neighbors, key=lambda a: a.points)
+                # If parent is significantly stronger (e.g., 20% more points), displace
+                if parent.points > weakest.points * 1.2:
+                    # Kill the weak
+                    self.world.grid[weakest.position[0], weakest.position[1]] = None
+                    self.agents.remove(weakest)
+                    self.deaths_this_tick += 1
+                    target_pos = weakest.position
+
+        # Migration Logic (Colonization / Launch)
+        if not target_pos and POPULATION_SETTINGS.get("birth_protocol") == "launch":
+            # Search for *any* empty spot
+            # Optimization: Try 10 random spots instead of scanning whole grid (speed)
+            best_launch_spot = None
+            for _ in range(10):
+                lx = random.randint(0, self.world.width - 1)
+                ly = random.randint(0, self.world.height - 1)
+                if self.world.grid[lx, ly] is None:
+                    best_launch_spot = (lx, ly)
+                    break
+            
+            if best_launch_spot:
+                migration_tax = GAME_PHYSICS.get("migration_tax", 20) # Cost of traveling to new land
+                if parent.points > (migration_tax + 50): # Can afford tax + birth cost?
+                    parent.points -= migration_tax
+                    target_pos = best_launch_spot
+
         if target_pos:
-            child_points = parent.points / 2
+            child_points = 50 # Start fresh, don't inherit massive wealth
             parent.points /= 2
             
             # Inheritance with mutation (logic can be expanded in agent.py)
-            child = Agent(position=target_pos, dna=parent.dna.copy())
+            child = Agent(position=target_pos, dna=parent.mutate())
             child.points = child_points
             
             self.world.place_agent(child, *target_pos)

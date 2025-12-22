@@ -16,7 +16,7 @@ def get_social_stats(engine):
 
     avg_points = sum(a.points for a in engine.agents) / pop
     avg_fame = sum(engine.social_ledger.get_fame(a.id) for a in engine.agents) / pop
-    avg_mem = sum(a.dna["memory_capacity"] for a in engine.agents) / pop
+    avg_mem = sum(a.memory_capacity for a in engine.agents) / pop
     
     return {
         "tick": engine.tick,
@@ -37,7 +37,7 @@ def main():
     
     print(f"Logging to: {logger.get_log_path()}")
 
-    MAX_TICKS = 1000
+    MAX_TICKS = 10000
     try:
         for t in range(MAX_TICKS):
             # 1. Run Engine
