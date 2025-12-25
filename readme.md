@@ -1,79 +1,118 @@
-# PD-Sim: Neuroevolutionary Prisoner's Dillemma
+# Muqa: An Evolutionary Simulation of Social "Intelligence"
 
-An advanced **Agent-Based Simulation (ABS)** exploring the evolution of cooperation, culture, and intelligence in a competitive digital ecosystem. This project models how Neural Networks (`Brain`), inheritable culture (`Ideology`), and economic pressure (`Taxes`) shape the emergence of complex societies.
+An advanced **Multi-Agent Simulation (MAS)** exploring the co-evolution of social strategies, cognitive architectures, and tribal identities in a competitive digital ecosystem governed by game theory and metabolic economics.
 
 ---
 
-## 🇬🇧 English Documentation
+## 🇬🇧 Technical Overview
 
-### 1. Project Overview
-This simulation places autonomous agents on a 2D grid where they interact via the **Prisoner's Dilemma** game. Unlike simple rule-based models, these agents possess evolving **Neural Networks** that learn strategies over generations. They reproduce, migrate, form cultures, and eventually die, allowing "Survival of the Fittest" to select for the most successful behavioral traits.
+### 1. The Core Philosophy
+Muqa models a society of autonomous agents on a 2D grid where survival is tied to their ability to play the **Iterated Prisoner's Dilemma**. Unlike traditional models, these agents don't have hard-coded strategies. Their behavior emerges from a **5-Layer Cognitive Stack** and a **Vector-Based Identity System**.
 
-### 2. Core Mechanics
+### 2. Cognitive Architecture: The 5-Layer Brain
+Every agent possesses a modular neural processor where distinct layers compete to influence the final decision (Cooperate, Defect, Move or Ignore).
 
-#### 🧠 The Brain 2.0 (Neuroevolution)
-Every agent possesses an **Evolvable Neural Network**:
-*   **Neurogenesis:** The brain size (Hidden Neurons) is not fixed. It evolves from **2 to 20** neurons.
-*   **Growth & Atrophy:** During mutation, a child can add a neuron (Growth) or lose one (Atrophy). The weights are adjusted to preserve the parent's knowledge.
-*   **Brain Tax:** Intelligence is expensive (`brain_complexity_tax`). Agents must balance "Being Smart" vs "Being Efficient".
-*   **Inputs (6):** `[MyPoints, MyAge, OppFame, OppHistory, Bias, Ideology]`.
-*   **Outputs (4):** `[Cooperate, Defect, Move, Ignore]`.
+*   **Layer 1: Reptilian (Instinct)**: A static, evolved MLP defined by the agent's DNA. It provides the "baseline" behavior for specific inputs.
+*   **Layer 2: Hebbian (Habit)**: An associative learning layer that strengthens connections between recurring observations and outcomes.
+*   **Layer 3: Reinforcement (Value)**: A Q-learning-inspired layer that builds a matrix of rewards/punishments based on personal history.
+*   **Layer 4: Memetic (Social)**: An imitation layer that observes wealthy neighbors and "votes" for their successful behaviors (Prestige Bias).
+*   **Layer 5: Perturbative (Creativity/Noise)**: Adds Gaussian exploration noise to the decision stack, allowing for "Aha!" moments and preventing stagnation.
 
-#### 🧬 Genetics & Culture
-Traits are no longer just hardcoded probabilities; they are complex biological and cultural markers:
-*   **Ideology Inheritance:** Children inherit their parent's *current* Ideology (Optimism/Cynicism). This creates "Cultural Momentum"—a high-trust parent raises a high-trust child.
-*   **Evolvable Memory:** `memory_capacity` is a gene (5-50 slots). Smarter agents pay higher taxes (`cognitive_tax_rate`).
+**The "Cognitive Execution Mix"**: Evolution adjusts the *weighted reliance* on these layers. Some species survive by pure instinct (Reptilian), while others survive by cold calculation (RL) or social conformity (Memetic).
 
-#### ⚖️ Social Dynamics
-*   **Ideology (Trust Model):** Agents have a "Mood" (0.0=Cynic, 1.0=Idealist). Cooperation boosts this mood; betrayal destroys it.
-*   **Gossip Reliability:** Public fame is noisy. Agents might hear misinformation (`gossip_reliability`).
-*   **Migration:** Overcrowded agents can pay a **Migration Tax** (`migration_tax`) to "Launch" offspring to distant lands.
+### 3. Tribal Identity: Genes vs. Memes
+Identity is not binary; it is represented by 3-dimensional vectors.
+*   **Genetic Signature (The Green Beard)**: A fixed DNA array (visualized as agent **Borders**). It represents immutable biological markers.
+*   **Cultural Signature (The Flag)**: A mutable array (visualized as agent **Fill Color**). It is inherited from the parent's *current* state and shifts throughout life.
+    *   **Hybridization**: Mutual cooperation nudges cultural vectors closer.
+    *   **Polarization**: Betrayal causes cultural vectors to drift apart.
 
-#### 💰 Economic Physics
-The world is governed by strict thermodynamic laws:
-*   **Taxes:** Existence Tax + Cognitive Tax (Memory) + Brain Tax (Neurons).
-*   **Payoff Matrix:** High temptation to defect (10) vs moderate reward for cooperation (5).
+### 4. Relational Gossip & Social Fog
+Reputation is no longer a global "God View." Status is subjective:
+*   **Fame Radius**: News of actions propagates exponentially slower as physical distance increases.
+*   **Data Integrity**: Genetic proximity reduces gossip noise. You hear the "truth" about your kin.
+*   **Data Network**: Cultural proximity increases signal strength/clarity. You are more aware of the "deeds" of those who share your "Flag."
+*   **Social Fog**: The delta between reality and perception. In tribal societies, the fog is thick between different groups, allowing bad actors to hide in the "mist" of stranger-hood.
 
-### 3. Real-Time Visualization
-The simulation now runs a live dashboard with **3 Real-time Charts**:
-1.  **Population Size:** Total agents alive.
-2.  **Social Capital:** Compares Avg Reputation (Fame) vs Avg Trust (Ideology).
-3.  **Cognitive Evolution:** Compares Avg Brain Size (Red) vs Avg Memory (Orange).
+### 5. Metabolic Economy
+Every action and thought has a price (`BRAIN_COSTS`):
+*   **Hardware Tax**: Agents pay per hidden neuron and per unit of memory capacity.
+*   **Software Tax**: Active learning (Hebbian, RL, Memetic) requires constant metabolic energy.
+*   **Existence Tax**: A fixed "burn rate" to stay alive.
+*   **Reproduction**: Agents must exceed a wealth threshold (`reproduction_threshold`) to spawn offspring.
 
-### 4. How to Run
+### 6. The 4-Column Dashboard
+1.  **Map View**: Real-time rendering of tribes. (Fill = Culture, Border = Genetics).
+2.  **Macro Stats**: Population counts, Societal Wealth, and Social Capital (Fame/Ideology).
+3.  **Brain Profile**: Tracking the evolution of "Neurons" and the "Execution Mix" (which layer is driving the bus).
+4.  **Tribal Landscape**: Visualizing the "Social Fog" (perception error) and "Identity Priority" (which biases the species is evolving).
+
+---
+
+## 🇹🇷 Teknik Özet
+
+### 1. Temel Felsefe
+Muqa, 'Tutsak İkilemi' (Prisoner's Dilemma) oyununu temel alan, ajanların sosyal stratejilerini ve zihinsel yeteneklerini evrimleştirdiği gelişmiş bir **Çoklu Ajan Simülasyonudur (MAS)**. Ajanların davranışları sabit kodlanmamış; **5 Katmanlı Zihinsel Yığın** ve **Vektör Tabanlı Kimlik Sistemi** üzerinden evrimsel süreçte şekillenmiştir.
+
+### 2. Zihinsel Mimari: 5 Katmanlı Zihin
+Her ajan, farklı katmanların kararlarını (Yardımlaş, İhanet Et, Hareket Et veya Görmezden Gel) etkilemek için yarıştığı modüler bir "zihin"e sahiptir:
+
+*   **1. Katman: Sürüngen (İçgüdü)**: DNA tarafından tanımlanan statik bir sinir ağıdır. Temel davranışları belirler.
+*   **2. Katman: Hebbian (Alışkanlık)**: Sürekli tekrarlanan olaylar arasında ilişki kuran çağrışımsal öğrenme katmanıdır.
+*   **3. Katman: Pekiştirmeli (Değer)**: Kişisel deneyimlere dayalı ödül/ceza matrisi oluşturan Q-öğrenme tabanlı katmandır.
+*   **4. Katman: Memetik (Sosyal)**: Başarılı komşuları gözlemleyen ve onların stratejilerini taklit eden katmandır (Prestij Yanlılığı).
+*   **5. Katman: Yaratıcı (Gürültü)**: Ajanın keşif yapmasını sağlayan ve yerinde saymasını engelleyen rastgele gürültü katmanıdır.
+
+**Bilişsel İcra Karışımı**: Evrim, bu katmanlara olan güveni ayarlar. Bazı türler saf içgüdüyle hayatta kalırken, bazıları sosyal uyumla hayatta kalır.
+
+### 3. Kabile Kimliği: Genler ve Memler
+Kimlik ikili değil, 3 boyutlu vektörlerle temsil edilir:
+*   **Genetik İmza (Yeşil Sakal)**: Sabit DNA dizisidir (Ajanların **Kenar Rengi**). Değişmez biyolojik markerları temsil eder.
+*   **Kültürel İmza (Bayrak)**: Değişebilir kültürel dizidir (Ajanların **İç Rengi**). Ebeveynden miras alınır ve yaşam boyunca şekillenir.
+    *   **Hibritleşme**: Karşılıklı yardımlaşma, kültürel vektörleri birbirine yaklaştırır.
+    *   **Kutuplaşma**: İhanet, kültürel vektörlerin birbirinden uzaklaşmasına neden olur.
+
+### 4. İlişkisel Dedikodu ve Sosyal Sis
+İtibar artık küresel değil, özneldir:
+*   **Ün Yarıçapı**: Haberler, fiziksel mesafe arttıkça katlanarak daha yavaş yayılır.
+*   **Veri Bütünlüğü**: Genetik yakınlık, dedikodu gürültüsünü azaltır. Kendi akrabalarınız hakkındaki gerçeği daha net duyarsınız.
+*   **Sosyal Sis**: Gerçek ile algı arasındaki farktır. Kabileci toplumlarda yabancılar arasındaki sis kalındır, bu da kötü aktörlerin "yabancılık sisi" arkasında saklanmasına olanak tanır.
+
+### 5. Metabolik Ekonomi
+Her eylemin ve düşüncenin bir bedeli vardır (`BRAIN_COSTS`):
+*   **Donanım Vergisi**: Ajanlar sahip oldukları her nöron ve hafıza birimi için vergi öderler.
+*   **Yazılım Vergisi**: Aktif öğrenme katmanları (RL, Hebbian vb.) sürekli metabolik enerji gerektirir.
+*   **Üreme**: Ajanlar, yavrulamak için belli bir servet eşiğini (`reproduction_threshold`) geçmek zorundadır.
+
+### 6. 4 Sütunlu Kontrol Paneli
+1.  **Harita Görünümü**: Kabilelerin gerçek zamanlı görünümü (İç Renk = Kültür, Kenar = Genetik).
+2.  **Makro İstatistikler**: Nüfus, toplumsal zenginlik ve sosyal sermaye.
+3.  **Bilişsel Profil**: Nöron evrimi ve hangi bilişsel katmanın baskın olduğunun takibi.
+4.  **Kabile Manzarası**: "Sosyal Sis" (algı hatası) ve "Kimlik Önceliği"nin (genetik vs kültürel önyargı) görselleştirilmesi.
+
+---
+
+## 🛠️ Installation & Running
+
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/your-repo/muqa.git
+cd muqa
+
+# Install dependencies (Numpy, Matplotlib)
 pip install -r requirements.txt
 
-# Run Visualization (The Movie)
+# Start the simulation
 python3 main.py
 ```
----
 
-## 🇹🇷 Türkçe Dokümantasyon
+## ⚙️ Configuration Reference (`config.py`)
 
-### 1. Proje Özeti
-Bu simülasyon, "Tutsak İkilemi" oyunu üzerinden etkileşime giren ajanları modeller. Ajanlar, nesiller boyu öğrenen ve **Evrimleşen Sinir Ağlarına (Brain 2.0)** sahiptir. Ürerler, göç ederler, kültür oluştururlar ve ölürler.
-
-### 2. Temel Mekanikler
-
-#### 🧠 Beyin 2.0 (Nöroevrim)
-*   **Nörogenez:** Beyin boyutu (Gizli Nöronlar) 2 ile 20 arasında değişir ve evrimleşir.
-*   **Büyüme ve Körelme:** Mutasyon sırasında beyin büyüyebilir (yeni nöron) veya küçülebilir. Ebeveynin bilgisi korunur.
-*   **Beyin Vergisi:** Zeki olmak pahalıdır (`brain_complexity_tax`). Ajanlar "Zeki Olmak" ile "Verimli Olmak" arasında seçim yapmalıdır.
-
-#### 🧬 Genetik ve Kültür
-*   **İdeoloji Mirası:** Çocuklar, ebeveynlerinin dünya görüşünü miras alır. Güven kültürü nesiller boyu aktarılır.
-*   **Bilişsel Vergi:** Hafıza kapasitesi evrimleşir, ancak yüksek hafıza daha yüksek vergi demektir.
-
-### 3. Görselleştirme
-Canlı panelde 3 grafik bulunur:
-1.  **Nüfus:** Toplam canlı ajan sayısı.
-2.  **Sosyal Sermaye:** İtibar (Fame) ve Güven (Ideology) karşılaştırması.
-3.  **Bilişsel Evrim:** Beyin Boyutu (Nöronlar) ve Hafıza Kapasitesi.
-
-### 4. Nasıl Çalıştırılır
-```bash
-python3 main.py
-```
-*Görselleştirme penceresi açılır. Evrimi izleyin.*
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| `fame_radius` | 15 | Distance news travels spatially. |
+| `identity_gossip_bias`| 0.4 | Distortion caused by tribal unfamiliarity. |
+| `hybridization_rate` | 0.05 | Rate of cultural convergence on cooperation. |
+| `polarization_rate` | 0.1 | Rate of cultural divergence on betrayal. |
+| `reproduction_threshold`| 200 | Wealth required to reproduce. |
+| `brain_complexity_tax`| 0.02 | Energy cost per hidden neuron per tick. |

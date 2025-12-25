@@ -5,7 +5,7 @@ Defines the Agent class with Neural Network (Brain) based decision making.
 import uuid
 import random
 import numpy as np
-from config import POPULATION_SETTINGS, BRAIN_SETTINGS, GAME_PHYSICS
+from config import POPULATION_SETTINGS, BRAIN_SETTINGS, GAME_PHYSICS, IDENTITY_SETTINGS
 
 class Agent:
     def __init__(self, position, dna=None):
@@ -13,36 +13,64 @@ class Agent:
         self.id = uuid.uuid4()
         self.points = POPULATION_SETTINGS["starting_points"]
         self.position = position
-        self.age = random.randint(0, 50) # Random start to prevent mass extinction
+        self.age = random.randint(0, 50) 
         
-        # 2. DNA (The Brain Weights)
-        # If no parents, random initialization
+        # 2. DNA (The Brain Weights & Traits)
         if dna is None:
             self.dna = self._init_brain()
         else:
             self.dna = dna
             
-        # 3. Memory (Private Experience) - Still used as input for the brain
+        # 3. Lifetime Learning State (The Plastic Layers)
+        # These start as Zero and evolve during lifetime
+        # Shape: Input Size -> Output Size (Direct parallel pathways)
+        self.W_hebb = np.zeros((BRAIN_SETTINGS["input_size"], BRAIN_SETTINGS["output_size"]))
+        self.W_rl = np.zeros((BRAIN_SETTINGS["input_size"], BRAIN_SETTINGS["output_size"]))
+        
+        # Learning Context
+        self.last_input = None
+        self.last_action = None
+        
+        # 4. Memory (Private Experience)
         self.private_memory = {}
-        # Dynamic memory capacity from DNA
         self.memory_capacity = int(self.dna["memory_capacity"])
 
-        # 4. Ideology (State Variable: Willingness to Cooperate)
-        # 0.0 = Cynic, 1.0 = Idealist
-        # Inherit from DNA or start random neutral-ish
-        self.ideology = self.dna.get("starting_ideology", random.uniform(0.3, 0.7))
+        # 5. Cultural Identity (Fluid Status)
+        # We start with the genetic baseline but it shifts during lifetime
+        self.cultural_signature = self.dna["starting_culture"].copy()
         
     def _init_brain(self):
-        """Initializes random weights and memory traits."""
-        # Dynamic Hidden Size
+        """Initializes random weights and cognitive traits."""
         hidden_size = random.randint(BRAIN_SETTINGS["min_hidden"], BRAIN_SETTINGS["max_hidden"])
+        mem_start = BRAIN_SETTINGS["min_memory"]
+        mem_end = BRAIN_SETTINGS["max_memory"]
         
+        # --- Tribal Signatures ---
+        # Hardware (DNA)
+        genetic_signature = np.random.randn(IDENTITY_SETTINGS["genetic_dim"])
+        # Software (Starting Culture)
+        starting_culture = np.random.uniform(0, 1, IDENTITY_SETTINGS["cultural_dim"])
+
         return {
+            # --- Reptilian Layer (Static) ---
             "hidden_size": hidden_size,
             "W1": np.random.randn(BRAIN_SETTINGS["input_size"], hidden_size),
             "W2": np.random.randn(hidden_size, BRAIN_SETTINGS["output_size"]),
-            "memory_capacity": random.randint(5, 20),
-            "starting_ideology": random.uniform(0.3, 0.7)
+            
+            # --- Cognitive Traits (Layer Weights) ---
+            "w_reptilian": random.uniform(0.5, 1.5),
+            "w_hebb": random.uniform(0.0, 1.0),
+            "w_memetic": random.uniform(0.0, 1.0),
+            "w_rl": random.uniform(0.0, 1.0),
+            
+            # --- Identity DNA ---
+            "genetic_signature": genetic_signature,
+            "starting_culture": starting_culture,
+            
+            # --- Personality Specs ---
+            "creativity": random.uniform(0.01, 0.1), # Noise sigma
+            "learning_rate": random.uniform(0.01, 0.1),
+            "memory_capacity": random.randint(mem_start, mem_end)
         }
 
     def mutate(self):
@@ -51,7 +79,15 @@ class Agent:
             "hidden_size": self.dna["hidden_size"],
             "W1": self.dna["W1"].copy(),
             "W2": self.dna["W2"].copy(),
-            "memory_capacity": self.dna["memory_capacity"]
+            "memory_capacity": self.dna["memory_capacity"],
+            
+            # Traits
+            "w_reptilian": self.dna["w_reptilian"],
+            "w_hebb": self.dna["w_hebb"],
+            "w_memetic": self.dna["w_memetic"],
+            "w_rl": self.dna["w_rl"],
+            "creativity": self.dna["creativity"],
+            "learning_rate": self.dna["learning_rate"]
         }
         
         # --- Neurogenesis / Atrophy (Brain Resizing) ---
@@ -87,22 +123,31 @@ class Agent:
         noise2 = np.random.randn(*new_dna["W2"].shape) * BRAIN_SETTINGS["mutation_power"]
         new_dna["W2"][mask2] += noise2[mask2]
         
+        # --- Trait Mutation ---
+        for trait in ["w_reptilian", "w_hebb", "w_memetic", "w_rl", "creativity", "learning_rate"]:
+            if random.random() < BRAIN_SETTINGS["mutation_rate"]:
+                noise = random.uniform(-0.1, 0.1)
+                new_dna[trait] += noise
+                new_dna[trait] = max(0.0, new_dna[trait])
+
         # Mutate Memory Capacity
         if random.random() < BRAIN_SETTINGS["mutation_rate"]:
             change = random.randint(-2, 2)
             new_mem = new_dna["memory_capacity"] + change
-            new_dna["memory_capacity"] = max(1, min(50, new_mem))
+            new_dna["memory_capacity"] = max(BRAIN_SETTINGS["min_memory"], min(BRAIN_SETTINGS["max_memory"], new_mem))
             
-        # Inherit Ideology (Cultural Transmission from Parent's Current State)
-        # We start with the PARENT'S CURRENT IDEOLOGY, not their birth ideology
-        inherited_ideology = self.ideology
-        
-        # Mutate Ideology
-        if random.random() < BRAIN_SETTINGS["mutation_rate"]:
-            noise = random.uniform(-0.1, 0.1)
-            inherited_ideology += noise
-            
-        new_dna["starting_ideology"] = max(0.0, min(1.0, inherited_ideology))
+        # --- Identity Mutation ---
+        new_dna["genetic_signature"] = self.dna["genetic_signature"].copy()
+        if random.random() < IDENTITY_SETTINGS["mutation_rate"]:
+            noise = np.random.randn(IDENTITY_SETTINGS["genetic_dim"]) * 0.1
+            new_dna["genetic_signature"] += noise
+
+        # Inherit Culture (Cultural Transmission from Parent's Current State)
+        new_dna["starting_culture"] = self.cultural_signature.copy()
+        if random.random() < IDENTITY_SETTINGS["mutation_rate"]:
+            noise = np.random.uniform(-0.1, 0.1, IDENTITY_SETTINGS["cultural_dim"])
+            new_dna["starting_culture"] += noise
+            new_dna["starting_culture"] = np.clip(new_dna["starting_culture"], 0, 1)
         
         return new_dna
 
@@ -117,72 +162,138 @@ class Agent:
         if len(history) > self.memory_capacity:
             history.pop(0)
 
-    def update_ideology(self, opponent_move):
+    def update_culture(self, opponent_move, opponent_culture):
         """
-        Updates the agent's internal willingness to cooperate (Ideology).
-        Trust Model: Cooperation builds trust (Ideology Up), Defection breaks it (Ideology Down).
+        Updates the agent's internal cultural identity.
+        Mutual cooperation leads to hybridization; betrayal leads to polarization.
         """
-        # Learning Rate / Volatility
-        decay = 0.9 
+        if opponent_move == "C": # Hybridization
+            rate = IDENTITY_SETTINGS["hybridization_rate"]
+            # Shift towards neighbor
+            diff = opponent_culture - self.cultural_signature
+            self.cultural_signature += diff * rate
+        elif opponent_move == "D": # Polarization
+            rate = IDENTITY_SETTINGS["polarization_rate"]
+            # Shift away from neighbor
+            diff = opponent_culture - self.cultural_signature
+            self.cultural_signature -= diff * rate
         
-        target = 0.5 # Default neutral pull
-        if opponent_move == "C":
-            target = 1.0 # Reinforce Optimism
-        elif opponent_move == "D":
-            target = 0.0 # Reinforce Cynicism
-        
-        # Apply Update: Ideology shifts towards the target
-        self.ideology = (self.ideology * decay) + (target * (1 - decay))
+        self.cultural_signature = np.clip(self.cultural_signature, 0, 1)
 
-    def decide(self, opponent_id, opponent_fame):
+    def decide(self, opponent_id, opponent_fame, neighbors=None):
         """
-        The Neural Forward Pass.
-        Inputs: [MyPoints(norm), MyAge(norm), OppFame, OppHistory, Bias, Ideology]
+        The Layered Brain Forward Pass.
+        Combines Instinct, Habit, Social Pressure, Value, and Creativity.
         """
         # --- 1. PREPARE INPUTS ---
-        # Normalize points (0-1 range approx, capped at 1000)
         in_points = min(self.points / 1000.0, 1.0)
-        
-        # Normalize age
         in_age = min(self.age / POPULATION_SETTINGS["max_age"], 1.0)
-        
-        # Opponent Reputation (0-1)
         in_fame = opponent_fame
         
-        # Opponent Personal History (0=Defector, 1=Cooperator, 0.5=Unknown)
         in_history = 0.5
         if opponent_id in self.private_memory:
             hist = self.private_memory[opponent_id]
             if hist:
                 in_history = hist.count("C") / len(hist)
         
-        # Bias Input
         in_bias = 1.0
         
-        # Ideology Input
-        in_ideology = self.ideology
+        # --- Tribal Proximity Inputs ---
+        # 1. Kinship Proximity (Genetic Similarity)
+        # Using 1 / (1 + Euclidean Distance) for a 0-1 range
+        gen_dist = np.linalg.norm(self.dna["genetic_signature"] - opponent_id.dna["genetic_signature"]) if hasattr(opponent_id, 'dna') else 2.0
+        in_kin_prox = 1.0 / (1.0 + gen_dist)
         
-        inputs = np.array([in_points, in_age, in_fame, in_history, in_bias, in_ideology])
+        # 2. Cultural Proximity
+        cult_dist = np.linalg.norm(self.cultural_signature - opponent_id.cultural_signature) if hasattr(opponent_id, 'cultural_signature') else 1.0
+        in_cult_prox = 1.0 / (1.0 + cult_dist)
         
-        # --- 2. FORWARD PROPAGATION ---
-        # Layer 1: Inputs -> Hidden (ReLU)
-        hidden = np.dot(inputs, self.dna["W1"])
-        hidden = np.maximum(hidden, 0) # ReLU
+        # Shape: (1, 7)
+        inputs = np.array([in_points, in_age, in_fame, in_history, in_bias, in_kin_prox, in_cult_prox])
         
-        # Layer 2: Hidden -> Output
-        output = np.dot(hidden, self.dna["W2"])
+        # --- 2. MULTI-LAYER PROCESSING ---
+        logits = np.zeros(BRAIN_SETTINGS["output_size"])
         
-        # Softmax (optional, or just argmax)
-        # For simple decision, we just check which neuron is highest
-        # Output[0] = Cooperate
-        # Output[1] = Defect
-        # Output[2] = Move
-        # Output[3] = Ignore
+        # Layer 1: Reptilian (Instinct) - DNA Static
+        # ReLU(Input @ W1) @ W2
+        hidden = np.maximum(np.dot(inputs, self.dna["W1"]), 0)
+        reptilian_logits = np.dot(hidden, self.dna["W2"])
+        logits += self.dna["w_reptilian"] * reptilian_logits
+
+        # Layer 2: Hebbian (Habit) - Association
+        # Input @ W_hebb
+        hebbian_logits = np.dot(inputs, self.W_hebb)
+        logits += self.dna["w_hebb"] * hebbian_logits
+
+        # Layer 3: Reinforcement (Value) - Q-Learning-ish
+        # Input @ W_rl
+        rl_logits = np.dot(inputs, self.W_rl)
+        logits += self.dna["w_rl"] * rl_logits
+
+        # Layer 4: Memetic (Social) - Copying Success
+        # Average of neighbors' last moves, weighted by their wealth relative to me
+        # We assume neighbors have a 'last_action_index' property public
+        if neighbors and self.dna["w_memetic"] > 0:
+            social_vector = np.zeros(BRAIN_SETTINGS["output_size"])
+            valid_neighbors = 0
+            for n in neighbors:
+                if n.points > self.points and hasattr(n, 'last_action_index') and n.last_action_index is not None:
+                    # One-hot encoding of their move
+                    move_vec = np.zeros(BRAIN_SETTINGS["output_size"])
+                    move_vec[n.last_action_index] = 1.0
+                    social_vector += move_vec
+                    valid_neighbors += 1
+            
+            if valid_neighbors > 0:
+                social_vector /= valid_neighbors
+                logits += self.dna["w_memetic"] * social_vector
+
+        # Layer 5: Perturbative (Creativity) - Noise
+        noise = np.random.randn(BRAIN_SETTINGS["output_size"]) * self.dna["creativity"]
+        logits += noise
         
+        # --- 3. SELECTION ---
+        action_index = np.argmax(logits)
         choices = ["C", "D", "MOVE", "IGNORE"]
-        action_index = np.argmax(output)
+        
+        # --- 4. STORAGE FOR LEARNING ---
+        self.last_input = inputs
+        self.last_action_index = action_index
         
         return choices[action_index]
+
+    def learn(self, reward):
+        """
+        Updates the Plastic Layers (Hebbian & RL) based on the outcome.
+        """
+        if self.last_input is None or self.last_action_index is None:
+            return
+
+        # Hebbian Update: Strengthen connection between State and Action
+        # W_hebb += rate * (ActionVec * InputVec)
+        action_vec = np.zeros(BRAIN_SETTINGS["output_size"])
+        action_vec[self.last_action_index] = 1.0
+        
+        # Outer product to get matrix of changes
+        hebbian_delta = np.outer(self.last_input, action_vec) # Shape: 6x4 (Input x Output)
+        # Note: self.W_hebb should be (6, 4). My init was (Inputs, Outputs). 
+        # But np.dot(inputs, W) implies W is (Inputs, Outputs). 
+        # Correct check: Input is (6,), W is (6,4). np.dot -> (4,). Correct.
+        # np.outer(6, 4) -> (6,4). Correct.
+        
+        self.W_hebb += self.dna["learning_rate"] * hebbian_delta
+
+        # RL Update: Reward Modulated
+        # W_rl += rate * Reward * (ActionVec * InputVec)
+        # We assume reward is centered around 0 for better stability, or we just take raw.
+        # Payoff matrix has [-10, +10]. 
+        rl_delta = hebbian_delta * reward
+        self.W_rl += self.dna["learning_rate"] * rl_delta
+        
+        # Normalize to prevent explosion? 
+        # Optional: Decay
+        self.W_hebb *= 0.99
+        self.W_rl *= 0.99
 
     def is_alive(self):
         return self.points > 0

@@ -2,8 +2,9 @@
 simulation/social.py
 Manages the global 'Social Fame' ledger, reputation decay, and gossip.
 """
-from config import WORLD_SETTINGS
 import random
+import numpy as np
+from config import WORLD_SETTINGS
 
 class SocialLedger:
     def __init__(self):
@@ -32,32 +33,59 @@ class SocialLedger:
         self.registry[agent_id][action] += 1
         self.registry[agent_id]["history"].append(action)
 
-    def get_fame(self, agent_id):
+    def get_fame(self, observer, target):
         """
-        Calculates the 'Social Fame' of an agent.
-        Returns a value between 0 (Pure Defector) and 1 (Pure Cooperator).
+        Calculates the 'Relational Fame' of a target as perceived by an observer.
+        Fame is distorted by physical distance (Geography) and Identity bias.
         """
-        if agent_id not in self.registry:
-            return self.initial_fame  # Use the custom social bias
+        target_id = target.id
+        if target_id not in self.registry:
+            return self.initial_fame
         
-        data = self.registry[agent_id]
+        data = self.registry[target_id]
         total = data["C"] + data["D"]
         
         if total == 0:
             return 0.5
             
-        # Raw Reputation: C / Total
-        raw_reputation = data["C"] / total
+        # 1. Base Truth
+        base_reputation = data["C"] / total
         
-        # Apply Transparency Logic:
-        # If transparency is 0.5, the 'perceived' fame is shifted toward neutral (0.5)
-        perceived_fame = 0.5 + (raw_reputation - 0.5) * self.transparency
+        if observer is None:
+            return base_reputation
 
-        # Apply Gossip Reliability (Noise)
-        # 1.0 = No Noise, 0.0 = High Noise
-        reliability = WORLD_SETTINGS.get("gossip_reliability", 1.0)
-        if reliability < 1.0:
-            noise_range = (1.0 - reliability)
+        # 2. Geographic Filter (Physical Distance)
+        import numpy as np
+        dist = np.linalg.norm(np.array(observer.position) - np.array(target.position))
+        
+        # News fades as distance increases relative to fame_radius
+        geo_clarity = 1.0
+        if dist > WORLD_SETTINGS["fame_radius"]:
+            # Drop clarity exponentially outside the radius
+            geo_clarity = np.exp(-(dist - WORLD_SETTINGS["fame_radius"]) / 5.0)
+            
+        # 3. Identity Filter (Tribal Integrity)
+        # 3a. Genetic Proximity -> Data Integrity (Noise reduction)
+        gen_dist = np.linalg.norm(observer.dna["genetic_signature"] - target.dna["genetic_signature"])
+        kin_prox = 1.0 / (1.0 + gen_dist)
+        
+        # 3b. Cultural Proximity -> Data Network (Propagation/Clarity)
+        cult_dist = np.linalg.norm(observer.cultural_signature - target.cultural_signature)
+        cult_prox = 1.0 / (1.0 + cult_dist)
+        
+        # Combined Clarity: Influenced by geography and culture
+        clarity = self.transparency * geo_clarity * (0.5 + 0.5 * cult_prox)
+        
+        # Perceived Fame shifts towards neutral (0.5) as clarity drops
+        perceived_fame = 0.5 + (base_reputation - 0.5) * clarity
+        
+        # 4. Identity Bias (Noise)
+        # Noise is maximized for strangers (Low KinProx)
+        max_bias = WORLD_SETTINGS.get("identity_gossip_bias", 0.4)
+        noise_range = max_bias * (1.0 - kin_prox)
+        
+        if noise_range > 0:
+            import random
             noise = random.uniform(-noise_range, noise_range)
             perceived_fame += noise
         
